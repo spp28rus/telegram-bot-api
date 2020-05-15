@@ -2,6 +2,7 @@
 namespace TelegramBot\Api\Types;
 
 use TelegramBot\Api\BaseType;
+use TelegramBot\Api\BotApiContainer;
 use TelegramBot\Api\InvalidArgumentException;
 use TelegramBot\Api\TypeInterface;
 use TelegramBot\Api\Types\Inline\InlineKeyboardMarkup;
@@ -10,6 +11,25 @@ use TelegramBot\Api\Types\Payments\SuccessfulPayment;
 
 class Message extends BaseType implements TypeInterface
 {
+    const TYPE_TEXT = 'text';
+    const TYPE_PHOTO = 'photo';
+    const TYPE_VIDEO = 'video';
+    const TYPE_AUDIO = 'audio';
+    const TYPE_DOCUMENT = 'document';
+    const TYPE_ANIMATION = 'animation';
+    const TYPE_STICKER = 'sticker';
+    const TYPE_NEW_CHAT_MEMBER = 'new_chat_member';
+    const TYPE_LEFT_CHAT_MEMBER = 'left_chat_member';
+    const TYPE_POLL = 'poll';
+    const TYPE_VOICE = 'voice';
+    const TYPE_VENUE = 'venue';
+    const TYPE_LOCATION = 'location';
+    const TYPE_INVOICE = 'invoice';
+    const TYPE_NEW_CHAT_PHOTO = 'new_chat_photo';
+    const TYPE_NEW_CHAT_TITLE = 'new_chat_title';
+    const TYPE_PINNED_MESSAGE = 'pinned_message';
+    const TYPE_MIGRATE = 'migrate';
+
     /**
      * {@inheritdoc}
      *
@@ -399,7 +419,21 @@ class Message extends BaseType implements TypeInterface
     protected $replyMarkup;
 
     /**
-     * @return int
+     * Is edited or new message.
+     *
+     * @var boolean
+     */
+    protected $isEdited = false;
+
+    /**
+     * Is deleted.
+     *
+     * @var boolean
+     */
+    protected $isDeleted = false;
+
+    /**
+     * @return string
      */
     public function getMessageId()
     {
@@ -1145,4 +1179,156 @@ class Message extends BaseType implements TypeInterface
     {
         $this->replyMarkup = $replyMarkup;
     }
+
+    public function setEdited(bool $edited)
+    {
+        $this->isEdited = $edited;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isEdited()
+    {
+        return $this->isEdited;
+    }
+
+    /**
+     * @return Message
+     */
+    public function forward($chatId, bool $disableNotifiaction = false)
+    {
+        return BotApiContainer::getInstance()->forwardMessage(
+            $chatId,
+            $this->getChat()->getId(),
+            $this->getMessageId(),
+            $disableNotifiaction
+        );
+    }
+
+    public function replyMessage(
+        string $text,
+        $parseMode = null,
+        bool $disablePreview = false,
+        $replyMarkup = null,
+        bool $disableNotification = false
+    ) {
+        return BotApiContainer::getInstance()->sendMessage(
+            $this->getChat()->getId(),
+            $text,
+            $parseMode,
+            $disablePreview,
+            $this->getMessageId(),
+            $replyMarkup,
+            $disableNotification
+        );
+    }
+
+    public function editText(
+        string $text,
+        $parseMode = null,
+        $disablePreview = false,
+        $replyMarkup = null,
+        $inlineMessageId = null
+    ) {
+        return BotApiContainer::getInstance()->editMessageText(
+            $this->getChat()->getId(),
+            $this->getMessageId(),
+            $text,
+            $parseMode,
+            $disablePreview,
+            $replyMarkup,
+            $inlineMessageId
+        );
+    }
+
+    public function editCaption(
+        $caption = null,
+        $parseMode = null,
+        $replyMarkup = null,
+        $inlineMessageId = null
+    ) {
+        return BotApiContainer::getInstance()->editMessageCaption(
+            $this->getChat()->getId(),
+            $this->getMessageId(),
+            $caption,
+            $replyMarkup,
+            $inlineMessageId
+        );
+    }
+
+    public function editReplyMarkup(
+        $replyMarkup = null,
+        $inlineMessageId = null
+    ) {
+        return BotApiContainer::getInstance()->editMessageReplyMarkup(
+            $this->getChat()->getId(),
+            $this->getMessageId(),
+            $replyMarkup,
+            $inlineMessageId
+        );
+    }
+
+    public function delete()
+    {
+        $this->isDeleted = BotApiContainer::getInstance()->deleteMessage(
+            $this->getChat()->getId(),
+            $this->getMessageId()
+        );
+
+        return $this->isDeleted;
+    }
+
+    public function isDeleted()
+    {
+        return $this->isDeleted;
+    }
+
+    public function getMessageType()
+    {
+        $messageType = null;
+
+        if (!is_null($this->text)) {
+            $messageType = self::TYPE_TEXT;
+        } elseif ($this->photo) {
+            $messageType = self::TYPE_PHOTO;
+        } elseif ($this->video) {
+            $messageType = self::TYPE_VIDEO;
+        } elseif ($this->audio) {
+            $messageType = self::TYPE_AUDIO;
+        } elseif ($this->document) {
+            $messageType = self::TYPE_DOCUMENT;
+        } elseif ($this->animation) {
+            $messageType = self::TYPE_ANIMATION;
+        } elseif ($this->sticker) {
+            $messageType = self::TYPE_STICKER;
+        } elseif ($this->newChatMembers) {
+            $messageType = self::TYPE_NEW_CHAT_MEMBER;
+        } elseif ($this->leftChatMember) {
+            $messageType = self::TYPE_LEFT_CHAT_MEMBER;
+        } elseif ($this->poll) {
+            $messageType = self::TYPE_POLL;
+        } elseif ($this->voice) {
+            $messageType = self::TYPE_VOICE;
+        } elseif ($this->venue) {
+            $messageType = self::TYPE_VENUE;
+        } elseif ($this->location) {
+            $messageType = self::TYPE_LOCATION;
+        } elseif ($this->invoice) {
+            $messageType = self::TYPE_INVOICE;
+        } elseif ($this->newChatPhoto) {
+            $messageType = self::TYPE_NEW_CHAT_PHOTO;
+        } elseif ($this->newChatTitle) {
+            $messageType = self::TYPE_NEW_CHAT_TITLE;
+        } elseif ($this->pinnedMessage) {
+            $messageType = self::TYPE_PINNED_MESSAGE;
+        } elseif (
+            $this->migrateFromChatId
+            or $this->migrateToChatId
+        ) {
+            $messageType = self::TYPE_MIGRATE;
+        }
+
+        return $messageType;
+     }
 }
