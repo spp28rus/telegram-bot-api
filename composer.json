@@ -28,12 +28,12 @@
     },
     "autoload": {
         "psr-4": {
-            "spp28rus\\telegram-bot-api\\": "src"
+            "TelegramBot\\Api\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "spp28rus\\telegram-bot-api\\Test\\": "tests"
+            "TelegramBot\\Api\\Test\\": "tests"
         }
     },
     "scripts": {
